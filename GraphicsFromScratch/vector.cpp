@@ -4,7 +4,7 @@ vector::vector() = default;
 
 vector::vector(double init_x, double init_y, double init_z) : x(init_x), y(init_y), z(init_z) {}
 
-double vector::dot_product(const vector& other) const
+double vector::dot(const vector& other) const
 {
 	return x * other.x + y * other.y + z * other.z;
 }

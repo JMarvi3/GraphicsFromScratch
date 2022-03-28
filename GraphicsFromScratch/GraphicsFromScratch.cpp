@@ -22,7 +22,7 @@ vector canvas_to_viewport(int x, int y, double d, double vw, double vh, int cw, 
 std::vector<double> intersectRaySphere(const vector &o, const vector &d, const sphere &sphere) {
     double r = sphere.radius;
     vector co = o - sphere.center;
-    double a = d.dot_product(d), b = 2 * co.dot_product(d), c = co.dot_product(co) - r * r;
+    double a = d.dot(d), b = 2 * co.dot(d), c = co.dot(co) - r * r;
     double disc = b * b - 4 * a * c;
     if (disc < 0) {
         return {};
@@ -66,9 +66,9 @@ double compute_lighting(vector point, vector normal)
 		    {
                 l = dynamic_cast<directional_light*>(this_light)->get_direction();
             }
-	    	const double normal_dot_l = normal.dot_product(l);
+	    	const double normal_dot_l = normal.dot(l);
             if (normal_dot_l > 0)
-                i += (this_light->get_intensity() * normal_dot_l) / (normal.length() * l.length());
+                i += (this_light->get_intensity() * normal_dot_l) / l.length();
 	    }
     }
     return i;

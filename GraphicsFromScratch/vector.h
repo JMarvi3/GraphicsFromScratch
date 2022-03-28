@@ -9,7 +9,7 @@ class vector
 public:
 	vector();
 	vector(double x, double y, double z);
-	double dot_product(const vector& other) const;
+	double dot(const vector& other) const;
 	double length() const;
 	friend vector operator-(const vector &lhs, const vector& rhs);
 	friend vector operator+(const vector& lhs, const vector& rhs);
