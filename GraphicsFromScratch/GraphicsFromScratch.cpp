@@ -3,6 +3,7 @@
 #include "vector.h"
 #include "light.h"
 #include <iostream>
+#include <tuple>
 #include <vector>
 #include <utility>
 
@@ -18,31 +19,30 @@ vector canvas_to_viewport(int x, int y, double d, double vw, double vh, int cw, 
 }
 
 
-pair<double, double> intersectRaySphere(const vector &o, const vector &d, const sphere &sphere) {
+std::vector<double> intersectRaySphere(const vector &o, const vector &d, const sphere &sphere) {
     double r = sphere.radius;
     vector co = o - sphere.center;
     double a = d.dot_product(d), b = 2 * co.dot_product(d), c = co.dot_product(co) - r * r;
     double disc = b * b - 4 * a * c;
     if (disc < 0) {
-        return {INFINITY, INFINITY};
+        return {};
     }
 
     return { (-b + sqrt(disc)) / (2 * a), (-b - sqrt(disc)) / (2 * a) };
 }
 
-pair<const sphere*, double> traceRay(const vector &o, const vector &d, double t_min, double t_max) {
+std::tuple<const sphere*, double> traceRay(const vector &o, const vector &d, double t_min, double t_max) {
     double closest_t = INFINITY;
-    const sphere *closest_sphere = NULL;
-    for (auto it = spheres.begin(); it != spheres.end(); ++it) {
-        //cout << d << " : " << *it << endl;
-        pair<double, double> t = intersectRaySphere(o, d, **it);
-        if (t.first >= t_min && t.first <= t_max && t.first < closest_t) {
-            closest_t = t.first;
-            closest_sphere = *it;
-        }
-        if (t.second >= t_min && t.second <= t_max && t.second < closest_t) {
-            closest_t = t.second;
-            closest_sphere = *it;
+    const sphere *closest_sphere = nullptr;
+    for (const auto& this_sphere : spheres)
+    {
+        for(double t : intersectRaySphere(o, d, *this_sphere))
+        {
+	        if (t >= t_min and t <= t_max and  t < closest_t)
+	        {
+                closest_t = t;
+                closest_sphere = this_sphere;
+	        }
         }
     }
     return {closest_sphere, closest_t};
@@ -51,10 +51,9 @@ pair<const sphere*, double> traceRay(const vector &o, const vector &d, double t_
 double compute_lighting(vector point, vector normal)
 {
     double i = 0.0;
-    for(auto it = lights.begin(); it != lights.end(); ++it)
+    for (const auto this_light : lights)
     {
-        light *this_light = *it;
-        if(dynamic_cast<ambient_light*>(this_light))
+	    if(dynamic_cast<ambient_light*>(this_light))
 	    {
             i += dynamic_cast<ambient_light*>(this_light)->get_intensity();
 	    } else
@@ -88,14 +87,14 @@ void rayTrace(gui& gui)
     for(int x = -gui.width/2; x < gui.width/2; ++x)
         for (int y = -gui.height/2 + 1; y <= gui.height / 2; ++y) {
             vector d = canvas_to_viewport(x, y, 1, 1, 1, gui.width, gui.height);
-            //cout << x << ", " << y << ": " << d << endl;
-            pair<const sphere*, double> result = traceRay(o, d, 1, INFINITY);
-            if (result.first != nullptr)
+            const sphere *closest_sphere;
+            double distance;
+            std::tie(closest_sphere, distance) = traceRay(o, d, 1, INFINITY);
+            if (closest_sphere)
             {
-                vector point = o + d * result.second;
-            	vector normal = point - result.first->center;
-                normal = normal / normal.length();
-                const int color = (const int)(result.first->color*compute_lighting(point, normal));
+                const vector point = o + d * distance;
+                const vector normal = (point - closest_sphere->center) / closest_sphere->radius;
+                const int color = static_cast<const int>(closest_sphere->color * compute_lighting(point, normal));
                 gui.set_pixel(x, y, color);
             }
         }
